@@ -1360,7 +1360,7 @@ _jit_classify(jit_state_t *_jit, jit_code_t code)
 	case jit_code_calli:	case jit_code_jmpi:
 	    mask = jit_cc_a0_jmp;
 	    break;
-	case jit_code_callr:	case jit_code_jmpr:
+	case jit_code_callr:	case jit_code_callr2:	 case jit_code_jmpr:
 	    mask = jit_cc_a0_reg|jit_cc_a0_jmp;
 	    break;
 	case jit_code_retval_c:	case jit_code_retval_uc:
@@ -1713,7 +1713,7 @@ _check_block_again(jit_state_t *_jit)
 	block = NULL;
 	for (node = _jitc->head; node; node = node->next) {
 	    /* Special jumps that match jit_cc_a0_jmp */
-	    if (node->code == jit_code_calli || node->code == jit_code_callr)
+	    if (node->code == jit_code_calli || node->code == jit_code_callr || node->code == jit_code_callr2)
 		continue;
 
 	    /* Remember current label */
@@ -1933,7 +1933,7 @@ _jit_reglive(jit_state_t *_jit, jit_node_t *node)
 	    block = _jitc->blocks.ptr + node->v.w;
 	    jit_regset_set(&_jitc->reglive, &block->reglive);
 	    break;
-	case jit_code_callr:
+	case jit_code_callr:	case jit_code_callr2:
 	    value = jit_regno(node->u.w);
 	    if (!(node->u.w & jit_regno_patch)) {
 		jit_regset_setbit(&_jitc->reglive, value);
@@ -2504,7 +2504,7 @@ _jit_follow(jit_state_t *_jit, jit_block_t *block)
 	    case jit_code_prolog:
 	    case jit_code_epilog:
 		return;
-	    case jit_code_callr:
+	    case jit_code_callr:	case jit_code_callr2:
 		value = jit_regno(node->u.w);
 		if (!(node->u.w & jit_regno_patch)) {
 		    if (jit_regset_tstbit(&regmask, value)) {
@@ -2670,7 +2670,7 @@ _jit_update(jit_state_t *_jit, jit_node_t *node,
 	    case jit_code_epilog:
 		jit_regset_set_ui(mask, 0);
 		return;
-	    case jit_code_callr:
+	    case jit_code_callr:	case jit_code_callr2:
 		value = jit_regno(node->u.w);
 		if (!(node->u.w & jit_regno_patch)) {
 		    if (jit_regset_tstbit(mask, value)) {
@@ -2815,7 +2815,7 @@ _thread_jumps(jit_state_t *_jit)
 		    continue;
 		break;
 	    case jit_code_jmpr:
-	    case jit_code_callr:	case jit_code_calli:
+	    case jit_code_callr:	case jit_code_callr2:	case jit_code_calli:
 		/* non optimizable jump like code */
 		break;
 	    default:
@@ -3477,7 +3477,7 @@ _simplify(jit_state_t *_jit)
 	next = node->next;
 	switch (node->code) {
 	    case jit_code_label:	case jit_code_prolog:
-	    case jit_code_callr:	case jit_code_calli:
+	    case jit_code_callr:	case jit_code_callr2:	case jit_code_calli:
 	    reset:
 		memset(_jitc->gen, 0, sizeof(jit_int32_t) * _jitc->reglen);
 		memset(_jitc->values, 0, sizeof(jit_value_t) * _jitc->reglen);
@@ -3633,7 +3633,7 @@ _register_change_p(jit_state_t *_jit, jit_node_t *node, jit_node_t *link,
 	    case jit_code_label:	case jit_code_prolog:
 		/* lack of extra information so cannot say it is undefined */
 		return (jit_reg_change);
-	    case jit_code_callr:	case jit_code_calli:
+	    case jit_code_callr:	case jit_code_callr2:	case jit_code_calli:
 		if (!(jit_class(_rvs[regno].spec) & jit_class_sav))
 		    return (jit_reg_undef);
 		break;

@@ -1082,7 +1082,11 @@ static void call_to_c_wrapper(struct lightrec_cstate *state,
 	jit_pushargi(arg);
 
 	lightrec_regcache_mark_live(reg_cache, _jit);
+#if defined(__PS3__)
+	jit_callr2(tmp);
+#else
 	jit_callr(tmp);
+#endif
 
 	lightrec_free_reg(reg_cache, tmp);
 	lightrec_regcache_mark_live(reg_cache, _jit);

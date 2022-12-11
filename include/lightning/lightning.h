@@ -543,8 +543,9 @@ typedef enum {
 #define jit_jmpi()		jit_new_node_p(jit_code_jmpi,NULL)
     jit_code_jmpr,		jit_code_jmpi,
 #define jit_callr(u)		jit_new_node_w(jit_code_callr,u)
+#define jit_callr2(u)		jit_new_node_w(jit_code_callr2,u)
 #define jit_calli(u)		jit_new_node_p(jit_code_calli,u)
-    jit_code_callr,		jit_code_calli,
+    jit_code_callr,		jit_code_callr2,	jit_code_calli,
 
 #define jit_prepare()		_jit_prepare(_jit)
     jit_code_prepare,

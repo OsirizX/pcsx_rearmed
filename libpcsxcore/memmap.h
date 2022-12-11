@@ -34,6 +34,9 @@
 #include <_mingw.h>
 #endif
 
+#endif //_WIN32
+
+#if defined(_WIN32) || !HAVE_MMAP
 #include <sys/types.h>
 
 #ifdef __cplusplus

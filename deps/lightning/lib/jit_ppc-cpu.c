@@ -864,6 +864,8 @@ static jit_word_t _calli_p(jit_state_t*,jit_word_t,jit_int32_t);
 #  else
 #    define callr(r0)			_callr(_jit,r0)
 static void _callr(jit_state_t*,jit_int32_t);
+#    define callr2(r0)			_callr2(_jit,r0)
+static void _callr2(jit_state_t*,jit_int32_t);
 #    define calli(i0)			_calli(_jit,i0)
 static void _calli(jit_state_t*,jit_word_t);
 #    define calli_p(i0)			_calli_p(_jit,i0)
@@ -3283,6 +3285,42 @@ _callr(jit_state_t *_jit, jit_int32_t r0
 	ldxi(_R11_REGNO, r0, sizeof(void*) * 2);
     }
     ldr(r0, r0);
+#  else
+#    if _CALL_SYSV
+    /* Tell double arguments were passed in registers. */
+    if (varargs)
+	CREQV(6, 6, 6);
+#    endif
+    movr(_R12_REGNO, r0);
+#  endif
+
+    MTCTR(r0);
+    BCTRL();
+
+#  if _CALL_AIXDESC
+    ldxi(_R2_REGNO, _SP_REGNO, sizeof(void*) * 5);
+#  endif
+}
+
+static void
+_callr2(jit_state_t *_jit, jit_int32_t r0
+#  if _CALL_SYSV
+       , jit_int32_t varargs
+#  endif
+       )
+{
+#  if _CALL_AIXDESC
+    stxi(sizeof(void*) * 5, _SP_REGNO, _R2_REGNO);
+    /* FIXME Pretend to not know about r11? */
+    if (r0 == _R0_REGNO) {
+	movr(_R11_REGNO, _R0_REGNO);
+	ldxi(_R2_REGNO, _R11_REGNO, sizeof(void*));
+	ldxi(_R11_REGNO, _R11_REGNO, sizeof(void*) * 2);
+    }
+    else {
+	ldxi(_R2_REGNO, r0, sizeof(void*));
+	ldxi(_R11_REGNO, r0, sizeof(void*) * 2);
+    }
 #  else
 #    if _CALL_SYSV
     /* Tell double arguments were passed in registers. */

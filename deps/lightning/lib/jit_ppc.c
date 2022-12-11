@@ -1705,6 +1705,13 @@ _emit_code(jit_state_t *_jit)
 #endif
 		      );
 		break;
+	    case jit_code_callr2:
+		callr2(rn(node->u.w)
+#if _CALL_SYSV
+		      , !!(node->flag & jit_flag_varargs)
+#endif
+		      );
+		break;
 	    case jit_code_calli:
 		if (node->flag & jit_flag_node) {
 		    temp = node->u.n;
@@ -1856,7 +1863,12 @@ _emit_code(jit_state_t *_jit)
 	patch_at(_jitc->patches.ptr[offset].inst, word);
     }
 
+#if defined(__PS3__)
+    DCFlushRange(_jit->code.ptr, _jit->code.length);
+    ICInvalidateRange(_jit->code.ptr, _jit->code.length);
+#else
     jit_flush(_jit->code.ptr, _jit->pc.uc);
+#endif
 
     return (_jit->code.ptr);
 }
@@ -1869,7 +1881,7 @@ _emit_code(jit_state_t *_jit)
 void
 jit_flush(void *fptr, void *tptr)
 {
-#if defined(__GNUC__)
+#if defined(__GNUC__) && !defined(__PS3__)
     jit_word_t		f, t, s;
 
     s = sysconf(_SC_PAGE_SIZE);

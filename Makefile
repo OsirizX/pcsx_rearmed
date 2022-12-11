@@ -94,10 +94,11 @@ LIGHTREC_CUSTOM_MAP ?= 0
 LIGHTREC_THREADED_COMPILER ?= 0
 CFLAGS += -DLIGHTREC_CUSTOM_MAP=$(LIGHTREC_CUSTOM_MAP) \
 	  -DLIGHTREC_ENABLE_THREADED_COMPILER=$(LIGHTREC_THREADED_COMPILER)
-deps/lightning/lib/%.o: CFLAGS += -DHAVE_MMAP
+deps/lightning/lib/%.o: CFLAGS += -DHAVE_MMAP=$(HAVE_MMAP)
 ifeq ($(LIGHTREC_CUSTOM_MAP),1)
 LDLIBS += -lrt
-OBJS += libpcsxcore/lightrec/mem.o
+LIGHTREC_CUSTOM_MAP_OBJ ?= libpcsxcore/lightrec/mem.o
+OBJS += $(LIGHTREC_CUSTOM_MAP_OBJ)
 endif
 ifeq ($(LIGHTREC_THREADED_COMPILER),1)
 OBJS += deps/lightrec/recompiler.o \
