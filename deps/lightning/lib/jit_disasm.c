@@ -77,6 +77,7 @@ jit_init_debug(const char *progname)
 #if DISASSEMBLER
     bfd_init();
 
+#if !defined(__PS3__)
     if (progname)
 	disasm_bfd = bfd_openr(progname, NULL);
     if (disasm_bfd == NULL) {
@@ -88,6 +89,7 @@ jit_init_debug(const char *progname)
     }
     bfd_check_format(disasm_bfd, bfd_object);
     bfd_check_format(disasm_bfd, bfd_archive);
+#endif // __PS3__
     if (!disasm_stream)
 	disasm_stream = stdout;
 
@@ -96,8 +98,13 @@ jit_init_debug(const char *progname)
 #else
     INIT_DISASSEMBLE_INFO(disasm_info, disasm_stream, fprintf);
 #endif
+#if defined(__PS3__)
+    disasm_info.arch = bfd_arch_powerpc;
+    disasm_info.mach = bfd_mach_ppc64;
+#else
     disasm_info.arch = bfd_get_arch(disasm_bfd);
     disasm_info.mach = bfd_get_mach(disasm_bfd);
+#endif
 
 #  if HAVE_DISASSEMBLE_INIT_FOR_TARGET
     disassemble_init_for_target(&disasm_info);
@@ -106,7 +113,7 @@ jit_init_debug(const char *progname)
 #  if defined(__powerpc64__)
     disasm_info.disassembler_options = "64";
 #  endif
-#  if defined(__sparc__) || defined(__s390__) || defined(__s390x__)
+#  if defined(__sparc__) || defined(__s390__) || defined(__s390x__) || defined(__PS3__)
     disasm_info.endian = disasm_info.display_endian = BFD_ENDIAN_BIG;
 #  endif
 #  if defined(__s390__) || defined(__s390x__)
@@ -114,7 +121,9 @@ jit_init_debug(const char *progname)
 #  endif
     disasm_info.print_address_func = disasm_print_address;
 
-# if BINUTILS_2_29
+#if defined(__PS3__)
+    disasm_print = print_insn_big_powerpc;
+# elif BINUTILS_2_29
     disasm_print = disassembler(disasm_info.arch, __BYTE_ORDER == __BIG_ENDIAN,
 				disasm_info.mach, disasm_bfd);
 #  else
@@ -122,6 +131,7 @@ jit_init_debug(const char *progname)
 #  endif
     assert(disasm_print);
 
+#if !defined(__PS3__)
     if (bfd_get_file_flags(disasm_bfd) & HAS_SYMS) {
 	asymbol		**in;
 	asymbol		**out;
@@ -194,6 +204,7 @@ jit_init_debug(const char *progname)
 		  sizeof(asymbol *), disasm_compare_symbols);
 	}
     }
+#endif // __PS3__
 #endif
 }
 
@@ -214,6 +225,9 @@ void
 _jit_disassemble(jit_state_t *_jit)
 {
 #if DISASSEMBLER
+#if defined(__PS3__)
+	disassemble(_jit->code.ptr, _jit->pc.uc - _jit->code.ptr);
+#else
     if (disasm_bfd) {
 #  if defined(__arm__)
 	/* FIXME add mapping for prolog switching to arm and possible jump
@@ -223,6 +237,7 @@ _jit_disassemble(jit_state_t *_jit)
 
 	disassemble(_jit->code.ptr, _jit->pc.uc - _jit->code.ptr);
     }
+#endif // __PS3__
 #endif
 }
 
